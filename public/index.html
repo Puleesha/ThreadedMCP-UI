@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreadedMCP - Research Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            color: white;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+        }
+
+        .header .demo-label {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* ── Page-level column ── */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ── Metrics card: full width, no side panel ── */
+        .server-card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .server-card h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 24px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* three inputs stacked vertically */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .start-button {
+            width: 100%;
+            padding: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .start-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+        }
+
+        .start-button:active { transform: translateY(0); }
+
+        .start-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #667eea;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        .loading.show { display: flex; }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .output-section {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .output-section.show { display: block; }
+
+        .output-content {
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .error   { color: #ff5252; }
+        .success { color: #4CAF50; }
+
+        /* ── Dashboard row: iframe + sidebar guide ── */
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-card h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 16px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .dashboard-card iframe {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        /* ── Sidebar guide panel ── */
+        .guide-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            align-self: stretch;
+        }
+
+        .guide-panel h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .guide-item {
+            margin-bottom: 14px;
+        }
+
+        .guide-item .guide-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 3px;
+        }
+
+        .guide-item p {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .guide-tip {
+            margin-top: 18px;
+            padding: 10px 12px;
+            background: #f0f2ff;
+            border-left: 3px solid #667eea;
+            border-radius: 0 6px 6px 0;
+            font-size: 12px;
+            color: #444;
+            line-height: 1.5;
+        }
+
+        /* ── Responsive: stack sidebar below on narrow screens ── */
+        @media (max-width: 800px) {
+            .dashboard-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ThreadedMCP</h1>
+        <div class="subtitle">Safe and Structured Concurrency for MCP Server</div>
+        <div class="demo-label">Research Demo</div>
+    </div>
+
+    <div class="main-container">
+
+        <!-- ── Metrics / Control Card ── -->
+        <div class="server-card">
+            <h2>Run All Four Server Variants!</h2>
+
+            <div class="form-group">
+                <label>Limit</label>
+                <input type="text" id="java-limit" placeholder="e.g., 25">
+            </div>
+
+            <div class="form-group">
+                <label>CPU Cores</label>
+                <input type="text" id="cpu-cores" placeholder="e.g., 4">
+            </div>
+
+            <div class="form-group">
+                <label>Memory (GB)</label>
+                <input type="text" id="memory" placeholder="e.g., 2">
+            </div>
+
+            <button class="start-button" onclick="startJavaServer()">Start</button>
+
+            <div class="loading" id="java-loading">
+                <div class="spinner"></div>
+                <span>Starting servers...</span>
+            </div>
+
+            <div class="output-section" id="java-output">
+                <div class="output-content" id="java-output-content"></div>
+            </div>
+        </div>
+
+        <!-- ── Grafana row ── -->
+        <div class="dashboard-row">
+            <div class="dashboard-card">
+                <h3>Grafana (Dashboard)</h3>
+                <iframe src="http://localhost:3000" frameborder="0"></iframe>
+            </div>
+            <div class="guide-panel">
+                <h4>📊 Grafana Guide</h4>
+                <div class="guide-item">
+                    <div class="guide-label">Default login</div>
+                    <p>Username: <code>admin</code><br>Password: <code>admin</code></p>
+                </div>
+                <div class="guide-item">
+                    <div class="guide-label">Finding dashboards</div>
+                    <p>Go to <strong>Dashboards → Browse</strong> and look for the ThreadedMCP folder.</p>
+                </div>
+                <div class="guide-item">
+                    <div class="guide-label">Key panels</div>
+                    <p>Look for <em>Throughput</em>, <em>Latency</em>, and <em>Error rate</em> panels after a run.</p>
+                </div>
+                <div class="guide-item">
+                    <div class="guide-label">Time range</div>
+                    <p>Use the top-right picker and set <strong>Last 5 minutes</strong> to see live results.</p>
+                </div>
+                <div class="guide-tip">
+                    💡 Click <strong>Explore</strong> in the sidebar to run ad-hoc PromQL queries directly against the data.
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Prometheus row ── -->
+        <div class="dashboard-row">
+            <div class="dashboard-card">
+                <h3>Prometheus (Server status)</h3>
+                <iframe src="http://localhost:9090/targets" frameborder="0"></iframe>
+            </div>
+            <div class="guide-panel">
+                <h4>🔥 Prometheus Guide</h4>
+                <div class="guide-item">
+                    <div class="guide-label">Target states</div>
+                    <p><span style="color:#4CAF50;font-weight:600;">UP</span> — scraping successfully.<br><span style="color:#ff5252;font-weight:600;">DOWN</span> — server unreachable; check if the variant is running.</p>
+                </div>
+                <div class="guide-item">
+                    <div class="guide-label">Expected targets</div>
+                    <p>You should see four targets after clicking <strong>Start</strong> — one per server variant.</p>
+                </div>
+                <div class="guide-item">
+                    <div class="guide-label">Scrape interval</div>
+                    <p>Metrics refresh every <strong>15 s</strong> by default. Allow one interval after a run before querying.</p>
+                </div>
+                <div class="guide-item">
+                    <div class="guide-label">Query console</div>
+                    <p>Visit <code>/graph</code> and try <code>rate(mcp_requests_total[1m])</code> to inspect throughput.</p>
+                </div>
+                <div class="guide-tip">
+                    💡 A target stuck in <strong>DOWN</strong> usually means a port mismatch — confirm each variant's <code>--metrics-port</code> matches the Prometheus config.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function startJavaServer() {
+            const limitInput    = document.getElementById('java-limit');
+            const cpuCoresInput = document.getElementById('cpu-cores');
+            const memoryInput   = document.getElementById('memory');
+            const outputSection = document.getElementById('java-output');
+            const outputContent = document.getElementById('java-output-content');
+            const loading       = document.getElementById('java-loading');
+            const button        = event.target;
+
+            const limit    = limitInput.value.trim();
+            const cpuCores = cpuCoresInput.value.trim();
+            const memory   = memoryInput.value.trim();
+
+            if (!limit) {
+                alert('Please enter the limit!');
+                return;
+            }
+
+            if (isNaN(limit) || (cpuCores && isNaN(cpuCores)) || (memory && isNaN(memory))) {
+                alert('Please enter valid numbers');
+                return;
+            }
+
+            loading.classList.add('show');
+            button.disabled = true;
+            outputSection.classList.remove('show');
+
+            try {
+                const response = await fetch('/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        commandType: 'command1',
+                        limit,
+                        ...(cpuCores && { cpuCores }),
+                        ...(memory   && { memory })
+                    })
+                });
+
+                const result = await response.json();
+
+                loading.classList.remove('show');
+                button.disabled = false;
+                outputSection.classList.add('show');
+
+                if (result.success) {
+                    outputContent.className = 'output-content success';
+                    let output = `✓ Servers started successfully!\n\n`;
+                    output += `Limit: ${limit}`;
+                    if (cpuCores) output += ` | CPU Cores: ${cpuCores}`;
+                    if (memory)   output += ` | Memory: ${memory} MB`;
+                    output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+                    result.results.forEach((cmdResult, index) => {
+                        output += `Command ${cmdResult.commandIndex}:\n${cmdResult.command}\n\n`;
+                        if (cmdResult.stdout) output += `Output:\n${cmdResult.stdout}\n`;
+                        if (cmdResult.stderr) output += `Warnings:\n${cmdResult.stderr}\n`;
+                        if (index < result.results.length - 1)
+                            output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+                    });
+
+                    outputContent.textContent = output;
+                } else {
+                    outputContent.className = 'output-content error';
+                    let output = `✗ ${result.message}\n\n`;
+                    output += `Limit: ${limit}`;
+                    if (cpuCores) output += ` | CPU Cores: ${cpuCores}`;
+                    if (memory)   output += ` | Memory: ${memory} GB`;
+                    output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+                    result.results.forEach((cmdResult, index) => {
+                        output += `Command ${cmdResult.commandIndex}: ${cmdResult.success ? '✓ SUCCESS' : '✗ FAILED'}\n`;
+                        output += `${cmdResult.command}\n\n`;
+                        if (cmdResult.error)  output += `Error:\n${cmdResult.error}\n\n`;
+                        if (cmdResult.stdout) output += `Output:\n${cmdResult.stdout}\n`;
+                        if (cmdResult.stderr) output += `Error Details:\n${cmdResult.stderr}\n`;
+                        if (index < result.results.length - 1)
+                            output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+                    });
+
+                    outputContent.textContent = output;
+                }
+            } catch (error) {
+                loading.classList.remove('show');
+                button.disabled = false;
+                outputSection.classList.add('show');
+                outputContent.className = 'output-content error';
+                outputContent.textContent = `✗ Network error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
