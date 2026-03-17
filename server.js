@@ -13,8 +13,6 @@ const DOCKER_COMMANDS = {
   command1: {
     name: 'Run Both Server Variants',
     description: 'Runs two Docker containers with specified iterations and TODO limit',
-    // Define your two docker commands here
-    // Use {limit} as a placeholder
     commands: [
       'docker run --rm -p 9100:9100 java-mcp-server --bench {limit} --mode baseline',
       'docker run --rm -p 9101:9101 java-mcp-server --bench {limit} --mode structured',
@@ -25,7 +23,7 @@ const DOCKER_COMMANDS = {
 };
 
 app.post('/execute', (req, res) => {
-  const { commandType, iterations, limit } = req.body;
+  const { commandType, limit, cpuCores, memory } = req.body;
 
   if (!DOCKER_COMMANDS[commandType]) {
     return res.status(400).json({ 
@@ -36,15 +34,24 @@ app.post('/execute', (req, res) => {
 
   const commandConfig = DOCKER_COMMANDS[commandType];
   
-  // Replace placeholders with actual values
-  const commands = commandConfig.commands.map(cmd => 
-    cmd.replace('{limit}', limit)
-  );
+  // Build optional resource constraint flags
+  const cpuFlag    = cpuCores ? `--cpus=${cpuCores}` : '';
+  const memoryFlag = memory   ? `-m=${memory}g`      : '';
+  const resourceFlags = [cpuFlag, memoryFlag].filter(Boolean).join(' ');
+
+  // Replace placeholders and inject resource flags right after "docker run"
+  const commands = commandConfig.commands.map(cmd => {
+    let resolved = cmd.replace('{limit}', limit);
+    if (resourceFlags) {
+      resolved = resolved.replace('docker run', `docker run ${resourceFlags}`);
+    }
+    return resolved;
+  });
   
   console.log(`Executing commands:`);
   commands.forEach((cmd, i) => console.log(`  [${i + 1}] ${cmd}`));
 
-  // Execute both commands in parallel
+  // Execute all commands in parallel
   const execPromises = commands.map((command, index) => {
     return new Promise((resolve) => {
       exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
@@ -60,7 +67,6 @@ app.post('/execute', (req, res) => {
     });
   });
 
-  // Wait for both commands to complete
   Promise.all(execPromises).then(results => {
     const allSuccessful = results.every(r => r.success);
     
@@ -68,7 +74,7 @@ app.post('/execute', (req, res) => {
       success: allSuccessful,
       results: results,
       message: allSuccessful 
-        ? 'Both commands executed successfully' 
+        ? 'All commands executed successfully' 
         : 'One or more commands failed'
     });
   });
