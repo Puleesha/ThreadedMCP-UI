@@ -41,7 +41,6 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
-        /* ── Page-level column ── */
         .main-container {
             display: flex;
             flex-direction: column;
@@ -50,7 +49,6 @@
             margin: 0 auto;
         }
 
-        /* ── Metrics card: full width, no side panel ── */
         .server-card {
             background: white;
             border-radius: 12px;
@@ -66,7 +64,6 @@
             font-weight: 600;
         }
 
-        /* three inputs stacked vertically */
         .form-group {
             margin-bottom: 20px;
         }
@@ -122,55 +119,30 @@
             transform: none;
         }
 
-        .loading {
+        #success-msg {
             display: none;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            color: #667eea;
+            gap: 10px;
+            margin-top: 14px;
+            padding: 14px 16px;
+            background: #f0faf0;
+            border: 1.5px solid #4CAF50;
+            border-radius: 8px;
+            color: #2e7d32;
             font-size: 14px;
-            margin-top: 12px;
+            font-weight: 600;
         }
 
-        .loading.show { display: flex; }
-
-        .spinner {
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #667eea;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0%   { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .output-section {
+        #error-msg {
+            display: none;
+            margin-top: 14px;
+            padding: 14px 16px;
             background: #1e1e1e;
             border-radius: 8px;
-            padding: 16px;
-            margin-top: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .output-section.show { display: block; }
-
-        .output-content {
-            color: #e0e0e0;
+            color: #ff5252;
             font-family: 'Courier New', monospace;
             font-size: 12px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
         }
-
-        .error   { color: #ff5252; }
-        .success { color: #4CAF50; }
 
         /* ── Dashboard row: iframe + sidebar guide ── */
         .dashboard-row {
@@ -202,7 +174,6 @@
             border-radius: 8px;
         }
 
-        /* ── Sidebar guide panel ── */
         .guide-panel {
             background: white;
             border-radius: 12px;
@@ -250,7 +221,6 @@
             line-height: 1.5;
         }
 
-        /* ── Responsive: stack sidebar below on narrow screens ── */
         @media (max-width: 800px) {
             .dashboard-row {
                 grid-template-columns: 1fr;
@@ -286,16 +256,17 @@
                 <input type="text" id="memory" placeholder="e.g., 2">
             </div>
 
-            <button class="start-button" onclick="startJavaServer()">Start</button>
+            <button class="start-button" onclick="startServers()">Start</button>
 
-            <div class="loading" id="java-loading">
-                <div class="spinner"></div>
-                <span>Starting servers...</span>
+            <div id="success-msg">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="11" cy="11" r="11" fill="#4CAF50"/>
+                    <path d="M6 11.5L9.5 15L16 8" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Benchmark started, check Prometheus and Grafana for server health and performance!
             </div>
 
-            <div class="output-section" id="java-output">
-                <div class="output-content" id="java-output-content"></div>
-            </div>
+            <div id="error-msg"></div>
         </div>
 
         <!-- ── Grafana row ── -->
@@ -357,95 +328,28 @@
     </div>
 
     <script>
-        async function startJavaServer() {
-            const limitInput    = document.getElementById('java-limit');
-            const cpuCoresInput = document.getElementById('cpu-cores');
-            const memoryInput   = document.getElementById('memory');
-            const outputSection = document.getElementById('java-output');
-            const outputContent = document.getElementById('java-output-content');
-            const loading       = document.getElementById('java-loading');
-            const button        = event.target;
+        function startServers() {
+            const limit    = document.getElementById('java-limit').value.trim();
+            const cpuCores = document.getElementById('cpu-cores').value.trim();
+            const memory   = document.getElementById('memory').value.trim();
 
-            const limit    = limitInput.value.trim();
-            const cpuCores = cpuCoresInput.value.trim();
-            const memory   = memoryInput.value.trim();
-
-            if (!limit) {
-                alert('Please enter the limit!');
-                return;
-            }
-
+            if (!limit) { alert('Please enter the limit!'); return; }
             if (isNaN(limit) || (cpuCores && isNaN(cpuCores)) || (memory && isNaN(memory))) {
-                alert('Please enter valid numbers');
-                return;
+                alert('Please enter valid numbers'); return;
             }
 
-            loading.classList.add('show');
-            button.disabled = true;
-            outputSection.classList.remove('show');
+            fetch('/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    commandType: 'command1',
+                    limit,
+                    ...(cpuCores && { cpuCores }),
+                    ...(memory   && { memory })
+                })
+            });
 
-            try {
-                const response = await fetch('/execute', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        commandType: 'command1',
-                        limit,
-                        ...(cpuCores && { cpuCores }),
-                        ...(memory   && { memory })
-                    })
-                });
-
-                const result = await response.json();
-
-                loading.classList.remove('show');
-                button.disabled = false;
-                outputSection.classList.add('show');
-
-                if (result.success) {
-                    outputContent.className = 'output-content success';
-                    let output = `✓ Servers started successfully!\n\n`;
-                    output += `Limit: ${limit}`;
-                    if (cpuCores) output += ` | CPU Cores: ${cpuCores}`;
-                    if (memory)   output += ` | Memory: ${memory} MB`;
-                    output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-                    result.results.forEach((cmdResult, index) => {
-                        output += `Command ${cmdResult.commandIndex}:\n${cmdResult.command}\n\n`;
-                        if (cmdResult.stdout) output += `Output:\n${cmdResult.stdout}\n`;
-                        if (cmdResult.stderr) output += `Warnings:\n${cmdResult.stderr}\n`;
-                        if (index < result.results.length - 1)
-                            output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-                    });
-
-                    outputContent.textContent = output;
-                } else {
-                    outputContent.className = 'output-content error';
-                    let output = `✗ ${result.message}\n\n`;
-                    output += `Limit: ${limit}`;
-                    if (cpuCores) output += ` | CPU Cores: ${cpuCores}`;
-                    if (memory)   output += ` | Memory: ${memory} GB`;
-                    output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-                    result.results.forEach((cmdResult, index) => {
-                        output += `Command ${cmdResult.commandIndex}: ${cmdResult.success ? '✓ SUCCESS' : '✗ FAILED'}\n`;
-                        output += `${cmdResult.command}\n\n`;
-                        if (cmdResult.error)  output += `Error:\n${cmdResult.error}\n\n`;
-                        if (cmdResult.stdout) output += `Output:\n${cmdResult.stdout}\n`;
-                        if (cmdResult.stderr) output += `Error Details:\n${cmdResult.stderr}\n`;
-                        if (index < result.results.length - 1)
-                            output += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-                    });
-
-                    outputContent.textContent = output;
-                }
-            } catch (error) {
-                loading.classList.remove('show');
-                button.disabled = false;
-                outputSection.classList.add('show');
-                outputContent.className = 'output-content error';
-                outputContent.textContent = `✗ Network error: ${error.message}`;
-            }
+            document.getElementById('success-msg').style.display = 'flex';
         }
     </script>
 </body>
