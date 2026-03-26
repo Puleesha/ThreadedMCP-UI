@@ -298,14 +298,21 @@
         <!-- ── Prometheus row ── -->
         <div class="dashboard-row">
             <div class="dashboard-card">
-                <h3>Prometheus (Server status)</h3>
-                <iframe src="http://localhost:9090/targets" frameborder="0"></iframe>
+                <h2 style="text-align: center; font-weight: 600;">
+                    To view server health and status, visit the 
+                    <a href="http://localhost:9090/targets" target="_blank" rel="noopener noreferrer">
+                        Prometheus Page
+                    </a>
+                </h2>
             </div>
             <div class="guide-panel">
                 <h4>🔥 Prometheus Guide</h4>
                 <div class="guide-item">
                     <div class="guide-label">Target states</div>
-                    <p><span style="color:#4CAF50;font-weight:600;">UP</span> — scraping successfully.<br><span style="color:#ff5252;font-weight:600;">DOWN</span> — server unreachable; check if the variant is running.</p>
+                    <p>
+                        <span style="color:#4CAF50;font-weight:600;">UP</span> — scraping successfully.<br>
+                        <span style="color:#ff5252;font-weight:600;">DOWN</span> — server unreachable; check if the variant is running.
+                    </p>
                 </div>
                 <div class="guide-item">
                     <div class="guide-label">Expected targets</div>
@@ -324,7 +331,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
