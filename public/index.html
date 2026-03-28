@@ -334,16 +334,66 @@
     </div>
 
     <script>
+        function isPositiveInt(val) {
+            // Makes sure the string has nothing but digits
+            return /^\d+$/.test(val) && parseInt(val, 10) > 0;
+        }
+    
         function startServers() {
-            const limit    = document.getElementById('java-limit').value.trim();
-            const cpuCores = document.getElementById('cpu-cores').value.trim();
-            const memory   = document.getElementById('memory').value.trim();
-
-            if (!limit) { alert('Please enter the limit!'); return; }
-            if (isNaN(limit) || (cpuCores && isNaN(cpuCores)) || (memory && isNaN(memory))) {
-                alert('Please enter valid numbers'); return;
+            const limitElement = document.getElementById('java-limit');
+            const cpuElement = document.getElementById('cpu-cores');
+            const memoryElement = document.getElementById('memory');
+    
+            const limit = limitElement.value.trim();
+            const cpuCores = cpuElement.value.trim();
+            const memory = memoryElement.value.trim();
+    
+            // Limit is required
+            if (!limit) {
+                alert('Please enter a limit.');
+                limitElement.focus();
+                return;
             }
-
+            if (!isPositiveInt(limit)) {
+                alert('Limit must be a positive whole number.');
+                limitElement.focus();
+                return;
+            }
+            // Convert to base 10 integer
+            if (parseInt(limit, 10) > 250) {
+                alert('Limit cannot exceed 250.');
+                limitElement.focus();
+                return;
+            }
+    
+            // CPU is optional but validated if present
+            if (cpuCores) {
+                if (!isPositiveInt(cpuCores)) {
+                    alert('CPU Cores must be a positive whole number.');
+                    cpuElement.focus();
+                    return;
+                }
+                if (parseInt(cpuCores, 10) > 8) {
+                    alert('CPU Cores cannot exceed 8.');
+                    cpuElement.focus();
+                    return;
+                }
+            }
+    
+            // Memory is optional but validated if present
+            if (memory) {
+                if (!isPositiveInt(memory)) {
+                    alert('Memory must be a positive whole number.');
+                    memoryElement.focus();
+                    return;
+                }
+                if (parseInt(memory, 10) > 8) {
+                    alert('Memory cannot exceed 8 GB.');
+                    memoryElement.focus();
+                    return;
+                }
+            }
+    
             fetch('/execute', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -354,7 +404,7 @@
                     ...(memory   && { memory })
                 })
             });
-
+    
             document.getElementById('success-msg').style.display = 'flex';
         }
     </script>
