@@ -4,229 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ThreadedMCP - Research Demo</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 40px 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            font-size: 42px;
-            color: white;
-            margin-bottom: 12px;
-            font-weight: 700;
-        }
-
-        .header .subtitle {
-            font-size: 22px;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 8px;
-        }
-
-        .header .demo-label {
-            font-size: 18px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .server-card {
-            background: white;
-            border-radius: 12px;
-            padding: 32px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .server-card h2 {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 24px;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            font-family: 'Courier New', monospace;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .start-button {
-            width: 100%;
-            padding: 14px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 8px;
-        }
-
-        .start-button:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
-        }
-
-        .start-button:active { transform: translateY(0); }
-
-        .start-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        #success-msg {
-            display: none;
-            align-items: center;
-            gap: 10px;
-            margin-top: 14px;
-            padding: 14px 16px;
-            background: #f0faf0;
-            border: 1.5px solid #4CAF50;
-            border-radius: 8px;
-            color: #2e7d32;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        #error-msg {
-            display: none;
-            margin-top: 14px;
-            padding: 14px 16px;
-            background: #1e1e1e;
-            border-radius: 8px;
-            color: #ff5252;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-        }
-
-        /* ── Dashboard row: iframe + sidebar guide ── */
-        .dashboard-row {
-            display: grid;
-            grid-template-columns: 1fr 260px;
-            gap: 20px;
-            align-items: start;
-        }
-
-        .dashboard-card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .dashboard-card h3 {
-            font-size: 20px;
-            color: #333;
-            margin-bottom: 16px;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .dashboard-card iframe {
-            width: 100%;
-            height: 500px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-        }
-
-        .guide-panel {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            align-self: stretch;
-        }
-
-        .guide-panel h4 {
-            font-size: 15px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 16px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .guide-item {
-            margin-bottom: 14px;
-        }
-
-        .guide-item .guide-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #667eea;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 3px;
-        }
-
-        .guide-item p {
-            font-size: 13px;
-            color: #555;
-            line-height: 1.5;
-        }
-
-        .guide-tip {
-            margin-top: 18px;
-            padding: 10px 12px;
-            background: #f0f2ff;
-            border-left: 3px solid #667eea;
-            border-radius: 0 6px 6px 0;
-            font-size: 12px;
-            color: #444;
-            line-height: 1.5;
-        }
-
-        @media (max-width: 800px) {
-            .dashboard-row {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="header">
@@ -289,9 +67,6 @@
                     <div class="guide-label">Latency</div>
                     <p>Measure the average time taken to complete a request. <br> <b>Lower is better</b></p>
                 </div>
-                <div class="guide-tip">
-                    💡 Click <strong>Explore</strong> in the sidebar to run ad-hoc PromQL queries directly against the data.
-                </div>
             </div>
         </div>
 
@@ -310,24 +85,17 @@
                 <div class="guide-item">
                     <div class="guide-label">Target states</div>
                     <p>
-                        <span style="color:#4CAF50;font-weight:600;">UP</span> — scraping successfully.<br>
-                        <span style="color:#ff5252;font-weight:600;">DOWN</span> — server unreachable; check if the variant is running.
+                        <span style="color:#4CAF50;font-weight:600;">UP</span> - Server running<br>
+                        <span style="color:#ff5252;font-weight:600;">DOWN</span> - Server not running or unable to reach Prometheus
                     </p>
                 </div>
                 <div class="guide-item">
-                    <div class="guide-label">Expected targets</div>
-                    <p>You should see four targets after clicking <strong>Start</strong> — one per server variant.</p>
-                </div>
-                <div class="guide-item">
-                    <div class="guide-label">Scrape interval</div>
-                    <p>Metrics refresh every <strong>15 s</strong> by default. Allow one interval after a run before querying.</p>
+                    <div class="guide-label">Expected behaviour</div>
+                    <p>All four targets should be green (running) after starting benchmark</p>
                 </div>
                 <div class="guide-item">
                     <div class="guide-label">Query console</div>
-                    <p>Visit <code>/graph</code> and try <code>rate(mcp_requests_total[1m])</code> to inspect throughput.</p>
-                </div>
-                <div class="guide-tip">
-                    💡 A target stuck in <strong>DOWN</strong> usually means a port mismatch — confirm each variant's <code>--metrics-port</code> matches the Prometheus config.
+                    <p>Can be used to manually query the server metrics.</p>
                 </div>
             </div>
         </div>
