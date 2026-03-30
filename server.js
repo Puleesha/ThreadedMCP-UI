@@ -34,12 +34,12 @@ app.post('/execute', (req, res) => {
 
   const commandConfig = DOCKER_COMMANDS[commandType];
   
-  // Build optional resource constraint flags
+  // Build optional resource constraint parameters
   const cpuFlag    = cpuCores ? `--cpus=${cpuCores}` : '';
   const memoryFlag = memory   ? `-m=${memory}g`      : '';
   const resourceFlags = [cpuFlag, memoryFlag].filter(Boolean).join(' ');
 
-  // Replace placeholders and inject resource flags right after "docker run"
+  // Replace placeholders and insert parameters after docker run command
   const commands = commandConfig.commands.map(cmd => {
     let resolved = cmd.replace('{limit}', limit);
     if (resourceFlags) {
